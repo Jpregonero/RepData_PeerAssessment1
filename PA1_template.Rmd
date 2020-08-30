@@ -148,7 +148,7 @@ newinter <-  newdata %>% group_by(interval) %>% summarise(mean = mean(steps,na.r
 pl4 <- ggplot(newinter,aes(interval,mean)) + geom_line(color="blue",size=1) +
   xlim(0,2500)  + labs(x="5-minute interval",y="Total average of steps")
 
-pl4 + facet_grid(cols = vars(numbd))
+pl4 + facet_grid(rows = vars(numbd))
 ```
 
 Plots looks so similar because we replaced NAs by means in each interval,regardless type of day.
