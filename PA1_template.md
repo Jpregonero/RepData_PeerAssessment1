@@ -5,14 +5,13 @@ output:
     keep_md: true
 ---
 
-```{r global-options, include=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE,fig.align='center')
-```
+
 
 ## Loading and preprocessing the data
 
 Initially, we load the libraries used for the analysis.
-```{r, results="hide"}
+
+```r
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -21,15 +20,23 @@ library(lubridate)
 
 Due to the data is in a compressed file, let's use the **unz** and **read.csv** functions to read the data an copy it into a data frame called *data*, then we check the structure of the new data frame to see variables and their data type.
 
-```{r}
+
+```r
 data <- read.csv(unz("activity.zip", "activity.csv"))
 str(data)
+```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 We can see that *date* variable has character class, so we coerce it to a date class.
 
-```{r}
+
+```r
 data$date <- as.Date(as.character(data$date,"%Y%m%d"))
 ```
 
@@ -39,29 +46,39 @@ Now the data is tidy and ready to be processed.
 
 First, we create the *stpday* data frame that contains the total number of steps taken per date (at first grouping data with function **group_by**) calculated with the functions **summarise** and **sum** (The missing data is ignored with the argument *na.rm* set as TRUE)
 
-```{r}
+
+```r
 stpday <-  data %>% group_by(date) %>% summarise(sum = sum(steps,na.rm = TRUE))
 ```
 
 Then, we make a histogram of the total number of steps taken each day, using the function **ggplot** and **geom_histogram**, setting some features.
 
-```{r fig.height=3}
 
+```r
 pl1 <- ggplot(stpday,aes(sum)) + geom_histogram(color="blue") + labs(x="Steps per day",
         y ="Frequency") + ylim(0,13)
 pl1
-
 ```
+
+<img src="PA1_template_files/figure-html/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 And late, we calculate the mean and median of the total number of steps taken per day, using functions **mean** (rounded to 2 decimals  by function **round**) and **median** with column *sum* values from *stpdat* data frame  as argument.
 
-```{r}
-round(mean(stpday$sum, na.rm = TRUE),2)
 
+```r
+round(mean(stpday$sum, na.rm = TRUE),2)
 ```
 
-```{r}
-median(stpday$sum,na.rm = TRUE)
+```
+## [1] 9354.23
+```
 
+
+```r
+median(stpday$sum,na.rm = TRUE)
+```
+
+```
+## [1] 10395
 ```
 
 
@@ -69,7 +86,8 @@ median(stpday$sum,na.rm = TRUE)
 
 We calculate the mean of number of steps by interval with the functions **summarise** and **mean**. The values are assigned to a new data frame named *inter*, then we use its columns *interval* and *mean* to make a time series plot with **ggplot**.
 
-```{r fig.height=4}
+
+```r
 inter <-  data %>% group_by(interval) %>% summarise(mean = mean(steps,na.rm = TRUE))
 
 pl2 <- ggplot(inter,aes(interval,mean)) + geom_line(color="blue",size=1) +  
@@ -77,11 +95,21 @@ pl2 <- ggplot(inter,aes(interval,mean)) + geom_line(color="blue",size=1) +
 pl2
 ```
 
+<img src="PA1_template_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+
 To find which 5-minute interval, on average across all the days contains the maximum number of steps, we use the function **which.max** to determinate the position in the column *mean* of data frame *inter*, then we read this position on column *interval* of *inter* data frame. 
 
-```{r}
+
+```r
 mi <- which.max(inter$mean)
 inter[mi,"interval"]
+```
+
+```
+## # A tibble: 1 x 1
+##   interval
+##      <int>
+## 1      835
 ```
 
 So, the 5-minute interval is 835.
@@ -90,36 +118,47 @@ So, the 5-minute interval is 835.
 
 First, we must to know how many rows have missing values, this can be determinated if we rest to the number of rows of the data frame (function **nrow**), the number of complete rows (using functions **sum** and **complete.cases**, because this last one creates a vector with values 1 or 0, according to completeness of each row)
 
-```{r}
+
+```r
 nrow(data)-sum((complete.cases(data)))
+```
+
+```
+## [1] 2304
 ```
 
 
 Now we replace the missing data with the mean for the corresponding 5-minute interval, so we group the data by interval and replace the NA values of column *steps* (functions **mutate** and **replace_na**) with the rounded mean for each interval. The result is assigned to a data frame named *newdata*.
 
-```{r, results='hide'}
 
+```r
 newdata <-
   data %>% group_by(interval) %>% mutate(steps = replace_na(steps, round(mean(steps, na.rm = TRUE))))
-
 ```
 
 
 As we can see, the NA values has been replaced successfully, the number of complete rows is equal to number of rows of initial data frame. 
 
-```{r}
+
+```r
 nrow(data)==sum(complete.cases(newdata))
+```
+
+```
+## [1] TRUE
 ```
 
 These new values will change the pattern previously plotted for the total number of steps taken each day, because initially there were complete days that had NA values.
 
-```{r, fig.height=3}
 
+```r
 newstpday <-  newdata %>% group_by(date) %>% summarise(sum = sum(steps,na.rm = TRUE))
 
 pl3 <- ggplot(newstpday,aes(sum)) + geom_histogram(color="blue") + labs(x="Steps per day",y ="Frequency") + ylim(0,13)
 pl3
 ```
+
+<img src="PA1_template_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 
 
@@ -129,19 +168,18 @@ Panel plot comparing the average number of steps taken per 5-minute interval acr
 
 To see both patterns, we create a new variable as factor and assign it two values: weekend or weekday, depending the number returned by function **wday**.  
 
-```{r}
 
+```r
 newdata <- newdata %>% mutate(numbd = as.factor(wday(date)))
 
 newdata$numbd <- as.factor(
   ifelse(newdata$numbd == 1 | newdata$numbd == 7,"Weekend","Weekday"))
-
 ```
 
 Finally, create a new data frame named *newinter*, and we performe the same procedure as *inter* data frame. Then we generate two plots, one per day type (week day or weekend).
 
-```{r, fig.height=4}
 
+```r
 newinter <-  newdata %>% group_by(interval) %>% summarise(mean = mean(steps,na.rm = TRUE),numbd)
 
 
@@ -151,5 +189,7 @@ pl4 <- ggplot(newinter,aes(interval,mean)) + geom_line(color="blue",size=1) +
 pl4 + facet_grid(cols = vars(numbd))
 ```
 
-Plots looks so similar because we replaced NAs by means in each interval,regardless type of day.
+<img src="PA1_template_files/figure-html/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+
+Plots looks so similar because we replaced NAs by means in each interval.
 
